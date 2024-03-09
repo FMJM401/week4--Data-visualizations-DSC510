@@ -1,0 +1,21 @@
+#set up
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+df = pd.read_csv('Ice Cream Sales - temperatures.csv')
+df
+DATA VISUALS
+#Line plot
+sns.lineplot(x=df['Temperature'], y=df['Ice Cream Profits'])
+plt.show()
+#boxplot
+for col in df.columns:
+    sns.boxplot(data=df, y=df[col])
+    plt.show()
+#histogram
+for col in df.columns:
+    sns.histplot(df[col])
+    plt.show()
