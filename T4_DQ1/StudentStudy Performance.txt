@@ -1,0 +1,138 @@
+#importing needed sources
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+LOADING THE DATASET
+#reading csv file
+df =pd.read_csv('study_performance.csv')
+#showing csv file data
+df.head()
+
+#shape of csv file
+df.shape
+
+HANDELING MISING AND DUPLICATE VALUES
+#check missing values 
+df.isna().sum()
+
+#check Duplicates
+df.duplicated().sum()
+
+#check null and dtypes
+df.info()
+
+# Check the number of unique values of each column
+df.nunique()
+
+# Check statistics of data set
+df.describe()
+
+EDA (EXPLORATORY DATA ANALYSIS)
+#printing what is provided within csv file
+print("Categories in 'gender' variable:",end=" " )
+print(df['gender'].unique())
+
+print("Categories in 'race_ethnicity' variable:",end=" ")
+print(df['race_ethnicity'].unique())
+
+print("Categories in'parental level of education' variable:     ",end=" " )
+print(df['parental_level_of_education'].unique())
+
+print("Categories in 'lunch' variable:",end=" " )
+print(df['lunch'].unique())
+
+print("Categories in 'test preparation course' variable:",end=" " )
+print(df['test_preparation_course'].unique())
+
+#numerical & categorical columns
+numeric_features = [feature for feature in df.columns if df[feature].dtype != 'O']
+categorical_features = [feature for feature in df.columns if df[feature].dtype == 'O']
+# print columns
+print('We have {} numerical features : {}'.format(len(numeric_features), numeric_features))
+print('\nWe have {} categorical features : {}'.format(len(categorical_features), categorical_features))
+
+#adding addtional coloums for total score and average
+df['total score'] = df['math_score'] + df['reading_score'] + df['writing_score']
+df['average'] = df['total score']/3
+df.head()
+
+eading_full = df[df['reading_score'] == 100]['average'].count()
+writing_full = df[df['writing_score'] == 100]['average'].count()
+math_full = df[df['math_score'] == 100]['average'].count()
+
+print(f'Number of students with full marks in Maths: {math_full}')
+print(f'Number of students with full marks in Writing: {writing_full}')
+print(f'Number of students with full marks in Reading: {reading_full}')
+reading_less_20 = df[df['reading_score'] <= 20]['average'].count()
+writing_less_20 = df[df['writing_score'] <= 20]['average'].count()
+math_less_20 = df[df['math_score'] <= 20]['average'].count()
+
+print(f'Number of students with less than 20 marks in Maths: {math_less_20}')
+print(f'Number of students with less than 20 marks in Writing: {writing_less_20}')
+print(f'Number of students with less than 20 marks in Reading: {reading_less_20}')
+
+DATA VISUALIZATION
+sns.pairplot(df,hue = 'gender')
+plt.show()
+
+fig, axs = plt.subplots(1, 2, figsize=(15, 7))
+plt.subplot(121)
+sns.histplot(data=df,x='average',bins=30,kde=True,color='g')
+plt.subplot(122)
+sns.histplot(data=df,x='average',kde=True,hue='gender')
+plt.show()
+
+plt.rcParams['figure.figsize'] = (30, 12)
+
+plt.subplot(1, 5, 1)
+size = df['gender'].value_counts()
+labels = 'Female', 'Male'
+color = ['red','green']
+
+plt.pie(size, colors = color, labels = labels,autopct = '.%2f%%')
+plt.title('Gender', fontsize = 20)
+plt.axis('off')
+
+plt.subplot(1, 5, 2)
+size = df['race_ethnicity'].value_counts()
+labels = 'Group C', 'Group D','Group B','Group E','Group A'
+color = ['red', 'green', 'blue', 'cyan','orange']
+
+plt.pie(size, colors = color,labels = labels,autopct = '.%2f%%')
+plt.title('Race/Ethnicity', fontsize = 20)
+plt.axis('off')
+
+plt.subplot(1, 5, 3)
+size = df['lunch'].value_counts()
+labels = 'Standard', 'Free'
+color = ['red','green']
+
+plt.pie(size, colors = color,labels = labels,autopct = '.%2f%%')
+plt.title('Lunch', fontsize = 20)
+plt.axis('off')
+
+plt.subplot(1, 5, 4)
+size = df['test_preparation_course'].value_counts()
+labels = 'None', 'Completed'
+color = ['red','green']
+
+plt.pie(size, colors = color,labels = labels,autopct = '.%2f%%')
+plt.title('Test Course', fontsize = 20)
+plt.axis('off')
+
+plt.subplot(1, 5, 5)
+size = df['parental_level_of_education'].value_counts()
+labels = 'Some College', "Associate's Degree",'High School','Some High School',"Bachelor's Degree","Master's Degree"
+color = ['red', 'green', 'blue', 'cyan','orange','grey']
+
+plt.pie(size, colors = color,labels = labels,autopct = '.%2f%%')
+plt.title('Parental Education', fontsize = 20)
+plt.axis('off')
+
+plt.tight_layout()
+plt.grid()
+
+plt.show()
