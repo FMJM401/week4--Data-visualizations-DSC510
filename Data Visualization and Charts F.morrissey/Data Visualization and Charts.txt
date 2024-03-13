@@ -1,0 +1,314 @@
+#setup
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
+#reading csv file
+df = pd.read_csv("Sleep_health_and_lifestyle_dataset.csv")
+df.head()
+
+df.info()
+
+#dropping 
+df = df.drop("Person ID", axis = 1)
+df.head()
+
+df.info()
+
+#null values
+df1 = df.copy()
+df1['Sleep Disorder'] = df1['Sleep Disorder'].fillna('None')
+df1.info()
+
+#duplicates in dataframe
+duplicate_rows = df1[df1.duplicated()]
+duplicate_rows.info()
+
+df1 = df1.drop_duplicates(subset = df1.columns[1:]).reset_index(drop = True)
+df1.info()
+
+df1.head()
+Checking Values and Categorical Values
+unique_values = {}
+cat_columns = ['Gender', 'Occupation', 'BMI Category', 'Blood Pressure',  'Sleep Disorder']
+for col in cat_columns:
+    unique_values[col] = df[col].unique()
+    
+unique_values
+BMI Category
+df['BMI Category']= df1['BMI Category'].replace({'Normal Weight': 'Normal'})
+df['BMI Category'].value_counts().reset_index()
+Blood Pressure
+# Splitting Blood Pressure into Systolic Pressure and Diastolic Pressure by creating two new columns
+df[['Systolic Pressure', 'Diastolic Pressure']] = df['Blood Pressure'].str.split('/', expand=True)
+
+# Converting the new columns to numeric values
+df['Systolic Pressure'] = pd.to_numeric(df['Systolic Pressure'])
+df['Diastolic Pressure'] = pd.to_numeric(df['Diastolic Pressure'])
+df.head()
+# Creating the Blood Pressure Category column
+blood_pressure_conditions = [
+    (df['Systolic Pressure'] < 120) & (df['Diastolic Pressure'] < 80),
+    (df['Systolic Pressure'].between(120, 140)) & (df['Diastolic Pressure'] < 90),
+    (df['Systolic Pressure'] >= 140) & (df['Diastolic Pressure'] >= 90) | (df['Diastolic Pressure'] >= 80)
+]
+
+labels = ['Optimal', 'Normal', 'Hypertension']
+
+df['Blood Pressure Category'] = np.select(blood_pressure_conditions, labels, default='Undefined')
+df.head()
+
+Occupation
+ Let's check the values in the Occupations column
+df['Occupation'].value_counts()
+# Merging similar Occupations
+df["Occupation"] = df["Occupation"].replace({'Sales Representative': 'Salesperson'})
+
+df["Occupation"] = df["Occupation"].replace({'Software Engineer': 'Engineer'})
+# Deleting the Rows with Scientist and Manager as Occupation
+index_drop = df[df['Occupation'].isin(['Manager', 'Scientist'])].index
+df = df.drop(index_drop)
+df['Occupation'].value_counts()
+
+# Descriptive Statistics
+df.describe()
+
+Distrbution of Numerical Variables
+# List of numerical columns to plot
+num_column = ['Age', 'Sleep Duration', 'Quality of Sleep', 'Physical Activity Level', 'Stress Level', 'Heart Rate', 'Daily Steps']
+
+# Create a 7x2 subplot
+fig, axs = plt.subplots(7, 2, figsize=(12, 3 * 7))
+
+# Iterate through each numerical column
+for col in num_column:
+    # Swarmplot and boxplot on the left 
+    sns.swarmplot(data=df, x=col,s=3, color='darkred', ax=axs[num_column.index(col), 0])
+    sns.boxplot(data=df, x=col, ax=axs[num_column.index(col), 0])
+    # Histogram on the right
+    sns.histplot(data=df, x=col, bins=5, ax=axs[num_column.index(col), 1])
+    
+    axs[num_column.index(col), 0].set_title(col + ' distribution')
+    axs[num_column.index(col), 1].set_title(col + ' distribution')
+
+plt.tight_layout()
+# Show the plots
+plt.show()
+
+Sleep Quality Data Statistics
+# Calculate the mean, median, and mode of Quality of Sleep
+mean = df['Quality of Sleep'].mean()
+median = df['Quality of Sleep'].median()
+mode = df['Quality of Sleep'].mode()[0]
+
+# Suppress warnings due to old Seaborn version
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+# Create the histogram
+sns.histplot(x = 'Quality of Sleep', data = df, bins = 6, kde = True)
+
+# Add mean, median, and mode to the graph
+plt.axvline(x = mean, color = 'red', linestyle = '--', label = 'Mean')
+plt.axvline(x = median, color = 'green', linestyle = '-.', label = 'Median')
+plt.axvline(x = mode, color = 'blue', linestyle = ':', label = 'Mode')
+plt.legend()
+
+# Calculate the skewness and kurtosis
+skewness = stats.skew(df['Quality of Sleep'])
+kurtosis = stats.kurtosis(df['Quality of Sleep'])
+
+# Print the skewness and kurtosis
+print('Mean:', mean)
+print('Median:', median)
+print('Mode:', mode)
+print('Skewness:', skewness)
+print('Kurtosis:', kurtosis)
+
+# Show the plot
+plt.show()
+
+# Create a 3x2 subplot
+fig, axes = plt.subplots(3, 2, figsize=(15,15))
+
+# List of all the categorizations
+categorizations = ['Gender', 'Occupation', 'BMI Category', 'Blood Pressure Category', 'Sleep Disorder']
+
+# Flatten the axes array for easy indexing
+axes_flat = axes.flatten()
+
+# Suppress warnings due to old Seaborn version
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+# Create boxplots using a for loop
+for i,col in enumerate(categorizations):
+    sns.kdeplot(x = 'Quality of Sleep', data = df, hue = col, fill = True,ax=axes_flat[i])
+
+fig.delaxes(axes[2, 1])
+plt.tight_layout()
+plt.show()
+
+Analysis of Categorical Variables
+#Demongraphic Indicatiors 
+
+#Age and Gender
+fig, axs = plt.subplots(1, 3, figsize=(15, 4))
+
+sns.boxplot(x="Gender", y="Age", data=df, hue="Gender", palette='Set2', ax=axs[0]).set_title("1. How old are they?")
+sns.boxplot(x="Gender", y="Sleep Duration", data=df, hue="Gender", palette='Set2', ax=axs[1]).set_title("2. How long do they sleep?")
+sns.boxplot(x="Gender", y="Quality of Sleep", data=df, hue="Gender", palette='Set2', ax=axs[2]).set_title("3. How well do they sleep?")
+
+#Occupation
+fig, axs = plt.subplots(1, 2, figsize=(22, 6))
+
+# Occupations
+occ = df.groupby("Occupation", as_index=False).size()
+occ.sort_values("size", ascending=False, inplace=True)
+sns.barplot(data=occ, y="Occupation", x="size", order=occ['Occupation'].values, ax=axs[0], color="lightblue")
+axs[0].set(title="1. What are their occupations?", xlabel="Number of participants", ylabel="Occupation")
+
+# Avg Quality Sleep by Occupations
+occ_sleep = df.groupby("Occupation").agg({"Quality of Sleep": "mean"}).sort_values("Quality of Sleep", ascending=False)
+sns.barplot(data=occ_sleep, y=occ_sleep.index, x="Quality of Sleep", ax=axs[1], color="lightblue")
+axs[1].set(title="2. Who sleeps better, and who worse?", xlabel="Avg Quality of Sleep", ylabel="Occupation")
+plt.show()
+
+#Health Indicatiors
+#Sleep Disorders
+fig, axs = plt.subplots(1,3, figsize=(15, 5))
+
+# Suppress warnings due to old Seaborn version
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+sns.countplot(data=df, x="Sleep Disorder", color="lightblue",ax=axs[0]).set_title("1. How many suffer from Sleep Disorders?")
+axs[0].set(xlabel="Sleep Disorder", ylabel="Number of participants")
+
+sleep_disorder_quality_mean = df.groupby('Sleep Disorder')['Quality of Sleep'].agg("mean").sort_values(ascending=False)
+sns.barplot(data=sleep_disorder_quality_mean, color="lightblue", ax=axs[1]).set_title("2. Who sleeps better?")
+axs[1].set(xlabel="Sleep Disorder", ylabel="Avg Sleep Quality")
+
+sns. boxplot (data=df, x="Sleep Disorder", y="Quality of Sleep", color="lightblue", ax=axs[2]).set_title("3. Sleep quality boxplot by Sleep Disorders")
+axs[2].set(xlabel="Sleep Disorder", ylabel="Sleep quality")
+
+plt.show()
+df.groupby('Sleep Disorder')['Quality of Sleep'].agg(['mean', 'median'])
+
+#BMI Category
+categoria_ordine_sleep_disorders = ["Normal", "Overweight", "Obese"]
+fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+# Suppress warnings due to old Seaborn version
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+# Plot 1
+sns.countplot(data=df, order=categoria_ordine_sleep_disorders, x="BMI Category", color="lightblue", ax=axs[0]).set_title("1. What is your BMI category?")
+axs[0].set(xlabel="BMI Category", ylabel="Number of participants")
+
+# Plot 2
+sleep_disorder_quality_mean = df.groupby('BMI Category')['Quality of Sleep'].agg("mean").sort_values(ascending=False).reset_index()
+sns.barplot(data=sleep_disorder_quality_mean, order=categoria_ordine_sleep_disorders, x="BMI Category", y="Quality of Sleep", color="lightblue", ax=axs[1]).set_title("2. Who sleeps better?")
+axs[1].set(xlabel="BMI Category", ylabel="Avg Sleep quality")
+
+# Plot 3
+sns.boxplot(data=df, order=categoria_ordine_sleep_disorders, x="BMI Category", y="Quality of Sleep", color="lightblue", ax=axs[2]).set_title("3. Sleep quality boxplot by BMI Category")
+axs[2].set(xlabel="BMI Category", ylabel="Sleep quality")
+
+plt.show()
+df.groupby('BMI Category')['Quality of Sleep'].agg(['mean', 'median'])
+
+#Blood Pressure Categroy
+categoria_ordine_blood_pressure = ["Optimal", "Normal", "Hypertension"]
+fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+# Plot 1
+sns.countplot(data=df, order=categoria_ordine_blood_pressure, x="Blood Pressure Category", color="lightblue", ax=axs[0]).set_title("1. How is your Blood Pressure level?")
+axs[0].set(xlabel="Blood Pressure Category", ylabel="Number of participants")
+
+# Plot 2
+sleep_disorder_quality_mean = df.groupby('Blood Pressure Category')['Quality of Sleep'].agg("mean").reset_index()
+sns.barplot(data=sleep_disorder_quality_mean, order=categoria_ordine_blood_pressure, x="Blood Pressure Category", y="Quality of Sleep", color="lightblue", ax=axs[1]).set_title("2. Who sleeps better?")
+axs[1].set(xlabel="Blood Pressure Category", ylabel="Sleep quality mean")
+
+# Plot 3
+sns.boxplot(data=df, order=categoria_ordine_blood_pressure, x="Blood Pressure Category", y="Quality of Sleep", color="lightblue", ax=axs[2]).set_title("3. Sleep Quality boxplot by Blood Pressure Category")
+axs[2].set(xlabel="Blood Pressure Category", ylabel="Sleep quality")
+
+plt.show()
+df.groupby('Blood Pressure Category')['Quality of Sleep'].agg(['mean', 'median'])
+
+Correlations Between Data
+correlation_table = df[["Quality of Sleep", "Sleep Duration", "Age", "Physical Activity Level", "Stress Level", "Heart Rate", "Daily Steps"]].corr()
+
+plt.figure(figsize=(16, 5))
+heatmap = sns.heatmap(correlation_table, vmin=-1, vmax=1, annot=True, cmap='coolwarm')
+heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':18}, pad=12);
+# Quality of Sleep Correlation in Descending Order
+df_numerico = df.select_dtypes(include=['int', 'float'])
+df_numerico.corr()['Quality of Sleep'].sort_values(ascending=False)
+
+Impact of Sleep Duration and Stress on Quality of Sleep
+sns.set(font_scale=1)
+fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
+sns.regplot(data=df, x="Quality of Sleep",y="Sleep Duration",color="#4361EE",ax=axs[0]).set_title("Long Rest  = Good Rest")
+sns.regplot(data=df, x="Quality of Sleep",y="Stress Level",color="#4361EE",ax=axs[1]).set_title("More Stress = Bad Rest")
+
+df['Sleep Duration'].corr(df['Stress Level'])
+
+sns.set(font_scale=1)
+fig, axs = plt.subplots(2, 2, figsize=(15, 12))
+
+sns.regplot(data=df, x="Stress Level",y="Sleep Duration",color="#4361EE",ax=axs[0,0]).set_title("A: More Stress, Less Sleep")
+sns.regplot(data=df, x="Age",y="Sleep Duration",color="#4361EE",ax=axs[0,1]).set_title("B: The older you are, the less you sleep")
+sns.regplot(data=df, x="Heart Rate",y="Sleep Duration",color="#4361EE",ax=axs[1,0]).set_title("C: Fastest Heart Beat, Less Sleep")
+sns.regplot(data=df, x="Physical Activity Level",y="Sleep Duration",color="#4361EE",ax=axs[1,1]).set_title("Physical Activity Can Help Sleep")
+plt.show()
+
+Sleep Duration and  Quality of Sleep by Age
+
+joint_grid = sns.jointplot(data=df, x="Age", y="Sleep Duration", hue = 'BMI Category', height=8)
+joint_grid.ax_joint.set_xlim([25, 65])
+joint_grid.ax_joint.set_ylim([5.5, 9])
+plt.show()
+
+joint_grid = sns.jointplot(data=df, x="Age", y="Quality of Sleep", hue = 'BMI Category', height=8)
+joint_grid.ax_joint.set_xlim([25, 65])
+joint_grid.ax_joint.set_ylim([3, 10])
+plt.show()
+
+Impact of Stress and Heart Beat on Sleep Quality
+sns.set(font_scale=1)
+fig, axs = plt.subplots(1, 3, figsize=(18,6))
+
+sns.regplot(data=df,x="Heart Rate", y="Stress Level",color="#4361EE", ax=axs[0]).set_title("A: More Stress, Faster Heart Beat")
+sns.regplot(data=df, x="Heart Rate", y="Quality of Sleep",color="#4361EE",ax=axs[1]).set_title("B: Faster Heart Beat, Poorer Sleep Quality")
+sns.regplot(data=df, x="Heart Rate", y="Sleep Duration",color="#4361EE",ax=axs[2]).set_title("C: Faster Heart Beat, Less Sleep")
+
+plt.show()
+
+joint_grid = sns.jointplot(data=df, x="Heart Rate", y="Quality of Sleep", hue = 'Sleep Disorder', height=8)
+joint_grid.ax_joint.set_xlim([60, 90])
+joint_grid.ax_joint.set_ylim([3, 10])
+plt.show()
+
+joint_grid = sns.jointplot(data=df, x='Stress Level', y="Quality of Sleep", hue = 'Sleep Disorder', height=8)
+plt.show()
+
+joint_grid = sns.jointplot(data=df, x='Heart Rate', y="Quality of Sleep", hue = 'Blood Pressure Category', height=8)
+
+Impact of Physical Activity on Sleep Duration and Sleep Quality
+
+fig, axs = plt.subplots(1,2, figsize=(16,6))
+
+sns.regplot (data=df, y="Physical Activity Level",x="Quality of Sleep", color="#4361EE", ax=axs[0]).set_title("A: Sleep quality by Physical activity")
+axs[0].set(xlabel="Sleep quality" , ylabel="Physical activity (minutes)")
+
+sns.regplot (data=df, y="Physical Activity Level",x="Sleep Duration", color="#4361EE", ax=axs[1]).set_title("B: Sleep duration by Physical activity")
+axs[1].set(xlabel="Sleep duration (hours)", ylabel="Physical activity (minutes)")
+
+sns.regplot (data=df, y="Physical Activity Level", x="Stress Level", color="#4361EE").set_title("A: Sleep quality by Physical activity")
+
+plt.show()
+plt.show()
+
